@@ -11,13 +11,21 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const pool = new Pool({
-    user: process.env.DB_USER || 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'travel_db',
-    password: process.env.DB_PASSWORD || '12345', 
-    port: process.env.DB_PORT || 5432,
-});
+// Render (Bulud) və Lokal mühit üçün PostgreSQL qoşulma konfiqurasiyası
+const pool = new Pool(
+    process.env.DATABASE_URL
+        ? {
+              connectionString: process.env.DATABASE_URL,
+              ssl: { rejectUnauthorized: false }
+          }
+        : {
+              user: process.env.DB_USER || 'postgres',
+              host: process.env.DB_HOST || 'localhost',
+              database: process.env.DB_NAME || 'travel_db',
+              password: process.env.DB_PASSWORD || '12345',
+              port: process.env.DB_PORT || 5432,
+          }
+);
 
 pool.connect()
     .then(() => console.log('✅ PostgreSQL Veritabanına uğurla bağlandı.'))
