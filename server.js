@@ -10,15 +10,16 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 1. HƏR BİR SORĞUNU LOG-A YAZDIRAN MIDDLEWARE
+// 1. HTTP SORĞULARINI RENDER LOGLARINA YAZDIRAN MIDDLEWARE
 app.use((req, res, next) => {
     console.log(`📥 [${new Date().toLocaleTimeString()}] HTTP ${req.method} sorğusu gəldi: ${req.url}`);
     next();
 });
 
+// Statik fayllar (Frontend)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Render (Bulud) və Lokal mühit üçün PostgreSQL qoşulma konfiqurasiyası
+// 2. POSTGRESQL BAĞLANTISI (Render / Local)
 const pool = new Pool(
     process.env.DATABASE_URL
         ? {
@@ -35,14 +36,13 @@ const pool = new Pool(
 );
 
 pool.connect()
-    .then(() => console.log('✅ PostgreSQL Veritabanına uğurla bağlandı.'))
-    .catch(err => console.error('❌ Veritabanı bağlantı xətası:', err.stack));
+    .then(() => console.log('✅ PostgreSQL Verilənlər bazasına uğurla bağlandı.'))
+    .catch(err => console.error('❌ Database bağlantı xətası:', err.stack));
 
-// AES-256 Açar və İllik Vektor (32 byte key / 16 byte IV)
+// 3. AES-256 AÇARI VƏ İLLİK VEKTOR
 const AES_SECRET_KEY = crypto.scryptSync('voyage_secret_password', 'salt', 32);
-const AES_IV = Buffer.alloc(16, 0); // Sabit IV testi asanlaşdırmaq üçün
+const AES_IV = Buffer.alloc(16, 0);
 
-// AES-256-CBC ilə qiyməti şifrələmə
 function encryptAES256(text) {
     if (!text) return '';
     const cipher = crypto.createCipheriv('aes-256-cbc', AES_SECRET_KEY, AES_IV);
@@ -51,7 +51,6 @@ function encryptAES256(text) {
     return encrypted;
 }
 
-// AES-256-CBC ilə şifrəni çözmə
 function decryptAES256(encryptedHex) {
     if (!encryptedHex) return '';
     try {
@@ -64,44 +63,44 @@ function decryptAES256(encryptedHex) {
     }
 }
 
-// Bütün məkanları veritabanından alıb qiyməti AES-256 ilə şifrələyirik
+// 4. MƏKANLAR API-Sİ
 app.get('/api/places', async (req, res) => {
     try {
-        console.log('🔍 Məkanlar bazadan sorğulanır...');
         const result = await pool.query('SELECT * FROM places ORDER BY id DESC');
         
         const responseData = result.rows.map(place => {
             const encryptedPrice = encryptAES256(place.price_val);
             return {
                 ...place,
-                encrypted_price: encryptedPrice,
-                raw_price: place.price_val // Demo üçün
+                encrypted_price: encryptedPrice
             };
         });
 
-        console.log(`📦 Toplam ${responseData.length} məkan tapıldı və qiymətlər AES-256 ilə şifrələndi.`);
+        console.log(`📦 Toplam ${responseData.length} məkan bazadan gətirildi və qiymətlər AES-256 ilə şifrələndi.`);
         res.json(responseData);
     } catch (err) {
-        console.error('❌ Veritabanı sorğu xətası:', err.message);
+        console.error('❌ Server xətası:', err.message);
         res.status(500).json({ error: 'Server xətası baş verdi' });
     }
 });
 
-// AES-256 Çözmə (Deşifrə) API endpoint-i
+// 5. AES-256 DEŞİFRƏ API-Sİ (Render Logs-a yazdıran əsas hissə)
 app.post('/api/decrypt-price', (req, res) => {
     const { encrypted_price } = req.body;
+    
     if (!encrypted_price) {
-        return res.status(400).json({ error: 'Encrypted price is required' });
+        return res.status(400).json({ error: 'Şifrəli qiymət mətni tələb olunur' });
     }
     
     const originalPrice = decryptAES256(encrypted_price);
     
-    // LOGLAMA: Qiymət deşifrə olunarkən Render panelində xüsusi olaraq görünəcək
+    // RENDER LOGLARI ÜÇÜN ƏSAS XƏBƏRDARLIQ / MƏLUMAT:
     console.log(`🔓 [AES-256 DEŞİFRƏ] Şifrəli Mətn: ${encrypted_price} ==> Orijinal Qiymət: ${originalPrice}`);
     
     res.json({ decrypted_price: originalPrice });
 });
 
+// Bütün digər yolları index.html-ə yönləndiririk
 app.get('{*path}', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
