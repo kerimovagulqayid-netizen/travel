@@ -28,7 +28,7 @@ const pool = new Pool(
 );
 
 pool.connect()
-    .then(() => console.log('✅ PostgreSQL Veritabanına uğurla bağlandı.'))
+    .then(() => console.log('✅ PostgreSQL Verilenler bazasına uğurla bağlandı.'))
     .catch(err => console.error('❌ Veritabanı bağlantı xətası:', err.stack));
 
 // AES-256 Açar və İllik Vektor (32 byte key / 16 byte IV)
