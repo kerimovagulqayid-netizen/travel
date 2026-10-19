@@ -9,6 +9,13 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// 1. HƏR BİR SORĞUNU LOG-A YAZDIRAN MIDDLEWARE
+app.use((req, res, next) => {
+    console.log(`📥 [${new Date().toLocaleTimeString()}] HTTP ${req.method} sorğusu gəldi: ${req.url}`);
+    next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Render (Bulud) və Lokal mühit üçün PostgreSQL qoşulma konfiqurasiyası
@@ -28,7 +35,7 @@ const pool = new Pool(
 );
 
 pool.connect()
-    .then(() => console.log('✅ PostgreSQL Verilenler bazasına uğurla bağlandı.'))
+    .then(() => console.log('✅ PostgreSQL Veritabanına uğurla bağlandı.'))
     .catch(err => console.error('❌ Veritabanı bağlantı xətası:', err.stack));
 
 // AES-256 Açar və İllik Vektor (32 byte key / 16 byte IV)
@@ -60,6 +67,7 @@ function decryptAES256(encryptedHex) {
 // Bütün məkanları veritabanından alıb qiyməti AES-256 ilə şifrələyirik
 app.get('/api/places', async (req, res) => {
     try {
+        console.log('🔍 Məkanlar bazadan sorğulanır...');
         const result = await pool.query('SELECT * FROM places ORDER BY id DESC');
         
         const responseData = result.rows.map(place => {
@@ -71,20 +79,26 @@ app.get('/api/places', async (req, res) => {
             };
         });
 
+        console.log(`📦 Toplam ${responseData.length} məkan tapıldı və qiymətlər AES-256 ilə şifrələndi.`);
         res.json(responseData);
     } catch (err) {
-        console.error('Veritabanı sorğu xətası:', err.message);
+        console.error('❌ Veritabanı sorğu xətası:', err.message);
         res.status(500).json({ error: 'Server xətası baş verdi' });
     }
 });
 
-// AES-256 Çözmə API endpoint-i
+// AES-256 Çözmə (Deşifrə) API endpoint-i
 app.post('/api/decrypt-price', (req, res) => {
     const { encrypted_price } = req.body;
     if (!encrypted_price) {
         return res.status(400).json({ error: 'Encrypted price is required' });
     }
+    
     const originalPrice = decryptAES256(encrypted_price);
+    
+    // LOGLAMA: Qiymət deşifrə olunarkən Render panelində xüsusi olaraq görünəcək
+    console.log(`🔓 [AES-256 DEŞİFRƏ] Şifrəli Mətn: ${encrypted_price} ==> Orijinal Qiymət: ${originalPrice}`);
+    
     res.json({ decrypted_price: originalPrice });
 });
 
