@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Pro - Səyahət və Bilet Portalı</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- GİRİŞ MODAL EKRANI -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="bg-glow blob-1"></div>
+        <div class="bg-glow blob-2"></div>
+        <div class="login-card">
+            <div class="brand-header">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-compass"></i>
+                </div>
+                <h2>Voyage Pro</h2>
+                <p>Səyahət və Turizm İdarəetmə Paneli</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="email"><i class="fa-regular fa-envelope"></i> E-poçt ünvanı</label>
+                    <input type="email" id="email" placeholder="nümunə@gmail.com" required autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password"><i class="fa-solid fa-lock"></i> Şifrə</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="Şifrənizi daxil edin" required>
+                        <i class="fa-solid fa-eye toggle-password" id="toggle-eye" onclick="togglePassword()"></i>
+                    </div>
+                </div>
+
+                <div class="password-checklist">
+                    <div class="check-item invalid" id="req-len"><i class="fa-solid fa-circle-xmark"></i> Ən azı 8 simvol</div>
+                    <div class="check-item invalid" id="req-upper"><i class="fa-solid fa-circle-xmark"></i> Böyük hərf (A-Z)</div>
+                    <div class="check-item invalid" id="req-lower"><i class="fa-solid fa-circle-xmark"></i> Kiçik hərf (a-z)</div>
+                    <div class="check-item invalid" id="req-num"><i class="fa-solid fa-circle-xmark"></i> Rəqəm (0-9)</div>
+                    <div class="check-item invalid" id="req-spec"><i class="fa-solid fa-circle-xmark"></i> Xüsusi simvol (!@#$...)</div>
+                </div>
+
+                <div id="error-message" class="error-box hidden"></div>
+
+                <button type="submit" class="btn-primary">
+                    <span>Daxil Ol</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ƏSAS SƏHİFƏ -->
+    <div id="main-app" class="main-app hidden">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <div class="brand-icon-sm"><i class="fa-solid fa-compass"></i></div>
+                    <span>Voyage <strong>Pro</strong></span>
+                </div>
+                <div class="nav-links">
+                    <a href="#" class="active">Kəşf Et</a>
+                    <a href="#destinations">Məkanlar</a>
+                    <a href="#about">Haqqımızda</a>
+                </div>
+                <div class="nav-right">
+                    <div class="user-menu">
+                        <i class="fa-solid fa-user-circle user-avatar"></i>
+                        <span id="user-display-email" class="user-email"></span>
+                    </div>
+                    <button onclick="logout()" class="btn-logout" title="Çıxış et">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <header class="hero-section">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <span class="hero-tag"><i class="fa-solid fa-earth-americas"></i> Dünyanı Bizimlə Kəşf Edin</span>
+                <h1>Unudulmaz Səyahətlər Buradan Başlayır</h1>
+                <p>Ən gözəl turistik məkanlar, biletlər və AES-256 Təhlükəsizlik Sistemi.</p>
+                
+                <div class="hero-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input" placeholder="Hansı məkanı axtarırsınız? (məs: Bakı, Qəbələ...)" oninput="filterPlaces()">
+                </div>
+            </div>
+        </header>
+
+        <main id="destinations" class="main-content">
+            <div class="section-title-bar">
+                <div>
+                    <h2>Populyar Səyahət Biletləri</h2>
+                    <p>AES-256 Kriptoqrafiya ilə qorunan xüsusi qiymət tarifləri</p>
+                </div>
+                <div class="status-badge">
+                    <span class="dot"></span>
+                    <span>AES-256 Şifrələmə Aktiv</span>
+                </div>
+            </div>
+
+            <div id="places-list" class="cards-grid">
+                <!-- Kartlar dinamik yüklənəcək -->
+            </div>
+        </main>
+
+        <!-- BİLET TƏFƏRRÜATLARI MODALI -->
+        <div id="ticket-modal" class="ticket-modal hidden">
+            <div class="modal-overlay" onclick="closeTicketModal()"></div>
+            <div class="modal-card">
+                <button class="btn-close-modal" onclick="closeTicketModal()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="ticket-header">
+                    <span class="ticket-badge"><i class="fa-solid fa-ticket"></i> Səyahət Bileti</span>
+                    <h2 id="modal-title">---</h2>
+                </div>
+                <div class="ticket-body">
+                    <div class="ticket-info-grid">
+                        <div class="info-item">
+                            <i class="fa-regular fa-calendar-days"></i>
+                            <div>
+                                <small>Tarix</small>
+                                <strong id="modal-date">--/--/----</strong>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-regular fa-clock"></i>
+                            <div>
+                                <small>Gediş Saatı</small>
+                                <strong id="modal-time">--:--</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ticket-crypto-box">
+                        <div class="crypto-header">
+                            <i class="fa-solid fa-lock" style="color: #6366f1;"></i>
+                            <span>AES-256 Şifrələnmiş Qiymət:</span>
+                        </div>
+                        <div class="crypto-value" id="modal-encrypted-price">------------</div>
+                        
+                        <button id="btn-decrypt" class="btn-decrypt" onclick="decryptCurrentPrice()">
+                            <i class="fa-solid fa-key"></i> AES-256 Şifrəni Çöz
+                        </button>
+
+                        <div id="decrypted-result" class="decrypted-result hidden">
+                            <small>Çözülmüş Qiymət:</small>
+                            <h3 id="modal-real-price">-- AZN</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fa-solid fa-compass"></i> Voyage Pro
+                </div>
+                <p>&copy; 2026 Bütün hüquqlar qorunur. Kriptoqrafiya və Veb Layihəsi.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
