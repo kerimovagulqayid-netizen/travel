@@ -99,8 +99,8 @@ app.post('/api/decrypt-price', (req, res) => {
     res.json({ decrypted_price: originalPrice });
 });
 
-// Bütün digər yolları index.html-ə yönləndiririk (DÜZƏLDİLDİ: '{*path}' əvəzinə '*')
-app.get('*', (req, res) => {
+// Bütün digər yolları index.html-ə yönləndiririk (API yollarına toxunmadan)
+app.get(/^(?!\/api).+/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
