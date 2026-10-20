@@ -84,7 +84,7 @@ app.get('/api/places', async (req, res) => {
     }
 });
 
-// 5. AES-256 DEŞİFRƏ API-Sİ (Render Logs-a yazdıran əsas hissə)
+// 5. AES-256 DEŞİFRƏ API-Sİ
 app.post('/api/decrypt-price', (req, res) => {
     const { encrypted_price } = req.body;
     
@@ -94,17 +94,16 @@ app.post('/api/decrypt-price', (req, res) => {
     
     const originalPrice = decryptAES256(encrypted_price);
     
-    // RENDER LOGLARI ÜÇÜN ƏSAS XƏBƏRDARLIQ / MƏLUMAT:
     console.log(`🔓 [AES-256 DEŞİFRƏ] Şifrəli Mətn: ${encrypted_price} ==> Orijinal Qiymət: ${originalPrice}`);
     
     res.json({ decrypted_price: originalPrice });
 });
 
-// Bütün digər yolları index.html-ə yönləndiririk
-app.get('{*path}', (req, res) => {
+// Bütün digər yolları index.html-ə yönləndiririk (DÜZƏLDİLDİ: '{*path}' əvəzinə '*')
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Server işləyir: http://localhost:${PORT}`);
+    console.log(`🚀 Server işləyir: port ${PORT}`);
 });
